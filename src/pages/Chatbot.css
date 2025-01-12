@@ -1,0 +1,104 @@
+.main-container {
+    height: calc(100vh - 66px);
+    /* background-image: url("https://images.deccanherald.com/deccanherald%2Fimport%2Fsites%2Fdh%2Ffiles%2Farticleimages%2F2022%2F02%2F15%2Ffile7imxpjtcj4keujqxcu0-1081618-1644899144.jpg?w=1200&ar=40%3A21&auto=format%2Ccompress&ogImage=true&mode=crop"); */
+    background-position: bottom;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.avatar-container {
+    height: 90%;
+    width: 50%;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+}
+
+.input-container {
+    position: absolute;
+    bottom: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    width: 400px;
+}
+
+.input-area div {
+    width: 100%;
+    text-align: center;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.input-container input[type="text"] {
+    padding: 10px;
+    border-radius: 10px 0 0 10px;
+    border: 1px solid #909090;
+    width: 70%;
+    margin: 0;
+}
+
+.input-area {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.mic-button {
+    position: absolute;
+    top: -60px;
+    background: none;
+    background-color: #357df1;
+    border: 2px solid #fff;
+    color: #fff;
+    border-radius: 50%;
+    color: #222233;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 13px 16px;
+    transition: color 0.2s;
+    margin-right: 4px;
+}
+
+.mic-button:hover {
+    background-color: #2d5ec8;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(192, 192, 192, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(30, 215, 96, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(30, 215, 96, 0);
+    }
+}
+
+.mic-button.listening {
+    animation: pulse 1.5s infinite;
+}
+
+.send-button {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 0 12px 12px 0;
+    background-color: #70a1f0;
+    color: #181e54;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
