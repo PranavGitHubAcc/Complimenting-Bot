@@ -4,6 +4,7 @@ import useFaceDetection from "../hooks/useFaceDetection";
 import FaceDetection from "@mediapipe/face_detection";
 import { Camera } from "@mediapipe/camera_utils";
 import sendToGemini from "../utils/sendToGemini";
+import * as SpeechSDK from "microsoft-cognitiveservices-speech-sdk";
 
 const width = 1200;
 const height = 1200;
@@ -29,6 +30,43 @@ const WebcamDemo = () => {
                 }),
         });
 
+    // const fetchSpeech = (textToSpeak) => {
+    //     const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(
+    //         import.meta.env.VITE_REACT_APP_AZURE_API_KEY,
+    //         import.meta.env.VITE_REACT_APP_AZURE_REGION
+    //     );
+
+    //     speechConfig.speechSynthesisVoiceName =
+    //         "en-US-Aria:DragonHDLatestNeural"; 
+    //     const audioConfig = SpeechSDK.AudioConfig.fromDefaultSpeakerOutput();
+    //     const synthesizer = new SpeechSDK.SpeechSynthesizer(
+    //         speechConfig,
+    //         audioConfig
+    //     );
+
+    //     synthesizer.speakTextAsync(
+    //         textToSpeak,
+    //         (result) => {
+    //             if (
+    //                 result.reason ===
+    //                 SpeechSDK.ResultReason.SynthesizingAudioCompleted
+    //             ) {
+    //                 console.log("Speech synthesized successfully.");
+    //             } else {
+    //                 console.error(
+    //                     "Speech synthesis failed:",
+    //                     result.errorDetails
+    //                 );
+    //             }
+    //             synthesizer.close();
+    //         },
+    //         (err) => {
+    //             console.error("Error synthesizing speech:", err);
+    //             synthesizer.close();
+    //         }
+    //     );
+    // };
+
     useEffect(() => {
         const interval = setInterval(() => {
             if (detected) {
@@ -44,6 +82,7 @@ const WebcamDemo = () => {
                             sendToGemini(base64Image)
                                 .then((responseText) => {
                                     console.log("AI Response:", responseText);
+                                    // fetchSpeech(responseText); // Speak the AI response
                                 })
                                 .catch((error) => {
                                     console.error(
