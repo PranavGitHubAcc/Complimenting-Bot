@@ -4,13 +4,14 @@ import { Canvas } from "@react-three/fiber";
 import { TalkingAvatar } from "../components/TalkingAvatar";
 import WebcamDemo from "../components/WebcamDemo";
 import { IoSend, IoMic, IoMicOff } from "react-icons/io5";
-
 import "./Chatbot.css";
+import * as SpeechSDK from "microsoft-cognitiveservices-speech-sdk";
+import genAIInstance from "../utils/geminiInstance";
 
 function Chatbot() {
     const [questionInput, setQuestionInput] = useState("");
     const [answer, setAnswer] = useState({});
-    const [chatQuestion, setChatQuestion] = useState("ನಿಮ್ಮ ಪ್ರಶ್ನೆಯನ್ನು ಕೇಳಿ");
+    const [chatQuestion, setChatQuestion] = useState("Enter your question");
     const [isListening, setIsListening] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
     const [isSpeaking, setIsSpeaking] = useState(false);
@@ -41,78 +42,95 @@ function Chatbot() {
         }
     }, [recognition]);
 
-    const fetchSpeech = async (answerText) => {
-        try {
-            const audioResponse = await fetch(`http://127.0.0.1:8000/tts/`, {
-                body: JSON.stringify({
-                    text: answerText,
-                }),
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+    const fetchSpeech = (answerText) => {
+        const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(
+            import.meta.env.VITE_REACT_APP_AZURE_API_KEY,
+            import.meta.env.VITE_REACT_APP_AZURE_REGION
+        );
+
+        // speechConfig.speechSynthesisVoiceName = "en-IN-AashiNeural"; // Replace with desired voice
+        // speechConfig.speechSynthesisVoiceName = "en-IE-EmilyNeural"; // Replace with desired voice
+        speechConfig.speechSynthesisVoiceName =
+            "en-US-Aria:DragonHDLatestNeural"; // Replace with desired voice
+
+        const audioConfig = SpeechSDK.AudioConfig.fromDefaultSpeakerOutput();
+        const synthesizer = new SpeechSDK.SpeechSynthesizer(
+            speechConfig,
+            audioConfig
+        );
+
+        const visemesData = [];
+
+        // Handle viseme events
+        synthesizer.synthesisVisemeReceived = (s, e) => {
+            visemesData.push({
+                visemeId: e.visemeId,
+                audioOffset: e.audioOffset,
             });
-            if (!audioResponse.ok) {
-                throw new Error("Failed to fetch video");
+        };
+
+        synthesizer.speakTextAsync(
+            answerText,
+            (result) => {
+                if (
+                    result.reason ===
+                    SpeechSDK.ResultReason.SynthesizingAudioCompleted
+                ) {
+                    console.log("Speech synthesized successfully");
+                    setAnswer((prev) => ({
+                        ...prev,
+                        audioPlayer: new Audio(result.audioData),
+                        visemes: visemesData,
+                    }));
+                    setIsSpeaking(true);
+                    const audioPlayer = new Audio(
+                        URL.createObjectURL(result.audioData)
+                    );
+                    audioPlayer.play();
+                    audioPlayer.onended = () => setIsSpeaking(false);
+                } else {
+                    console.error(
+                        "Speech synthesis failed:",
+                        result.errorDetails
+                    );
+                }
+                synthesizer.close();
+            },
+            (err) => {
+                console.error("Error synthesizing speech:", err);
+                synthesizer.close();
             }
-            const audio = await audioResponse.blob();
-            const audioUrl = URL.createObjectURL(audio);
-            const audioPlayer = new Audio(audioUrl);
-            audioPlayer.onended = () => {
-                setIsSpeaking(false);
-            };
-
-            var visemes = audioResponse.headers.get("visemes");
-            visemes = JSON.parse(visemes);
-            setAnswer((prev) => {
-                return { ...prev, audioPlayer, visemes };
-            });
-            setIsSpeaking(true);
-
-            audioPlayer.currentTime = 0;
-            audioPlayer.play();
-        } catch (err) {
-            console.log("error" + err);
-        }
+        );
     };
 
     const handleSend = async () => {
         if (!questionInput.trim()) return;
         setIsGenerating(true);
+
+        const model = genAIInstance.getGenerativeModel({
+            model: "gemini-1.5-flash",
+        });
+
         try {
-            const answerResponse = await fetch(
-                `http://127.0.0.1:8000/answer/`,
-                {
-                    body: JSON.stringify({
-                        question: questionInput,
-                    }),
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                }
-            );
-            if (!answerResponse.ok) {
-                throw new Error("Failed to fetch an Answer");
-            }
+            const answerResponse = await model.generateContent(chatQuestion);
+            const answerData = answerResponse.response.text();
             setIsGenerating(false);
-            const answerData = await answerResponse.json();
-            console.log(answerData.answer);
             setAnswer((prev) => {
                 return {
                     ...prev,
-                    text: answerData.answer,
+                    text: answerData,
                 };
             });
+            fetchSpeech(answerData);
             setChatQuestion(questionInput);
-            fetchSpeech(answerData.answer);
-            setQuestionInput("");
+            console.log(answer);
         } catch (err) {
-            console.log("error" + err);
+            console.log(err);
         }
     };
 
     const handleMicClick = () => {
+        setQuestionInput("");
         if (recognition) {
             if (isListening) {
                 recognition.stop();
