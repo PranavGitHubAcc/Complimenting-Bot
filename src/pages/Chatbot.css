@@ -7,7 +7,7 @@
 }
 
 .avatar-container {
-    height: 150%;
+    height: 100%;
     width: 50%;
     position: absolute;
     bottom: 0;
@@ -101,4 +101,30 @@
     font-size: 1rem;
     cursor: pointer;
     transition: background-color 0.3s;
+}
+
+.toggle-conversation-button {
+    position: absolute;
+    z-index: 100;
+    top: 20px;
+    right: 20px;
+    padding: 10px 20px;
+    background-color: #007bff; /* Primary blue color */
+    color: #fff; /* White text */
+    border: none; /* Remove border */
+    border-radius: 8px; /* Rounded corners */
+    font-size: 16px; /* Adjust font size */
+    font-weight: bold; /* Bold text */
+    cursor: pointer; /* Pointer cursor on hover */
+    transition: background-color 0.3s ease, transform 0.2s ease; /* Add hover effects */
+}
+
+.toggle-conversation-button:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+    transform: scale(1.05); /* Slightly increase size */
+}
+
+.toggle-conversation-button:active {
+    background-color: #003d80; /* Even darker blue on click */
+    transform: scale(1); /* Return to original size */
 }

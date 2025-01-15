@@ -15,6 +15,7 @@ function Chatbot() {
     const [isListening, setIsListening] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
     const [isSpeaking, setIsSpeaking] = useState(false);
+    const [conversation, setConversation] = useState(false);
 
     // Initialize SpeechRecognition
     const SpeechRecognition =
@@ -103,6 +104,11 @@ function Chatbot() {
         );
     };
 
+    const toggleConversation = () => {
+        setConversation((prevState) => !prevState);
+        console.log(conversation);
+    };
+
     const handleSend = async () => {
         if (!questionInput.trim()) return;
         setIsGenerating(true);
@@ -110,9 +116,10 @@ function Chatbot() {
         const model = genAIInstance.getGenerativeModel({
             model: "gemini-1.5-flash",
         });
+        setChatQuestion(questionInput);
 
         try {
-            const answerResponse = await model.generateContent(chatQuestion);
+            const answerResponse = await model.generateContent(questionInput);
             const answerData = answerResponse.response.text();
             setIsGenerating(false);
             setAnswer((prev) => {
@@ -122,7 +129,6 @@ function Chatbot() {
                 };
             });
             fetchSpeech(answerData);
-            setChatQuestion(questionInput);
             console.log(answer);
         } catch (err) {
             console.log(err);
@@ -146,59 +152,71 @@ function Chatbot() {
     return (
         <div className="chatbot-container">
             <div className="main-container">
-                <WebcamDemo />
-                <div className="avatar-container">
-                    <Canvas
-                        camera={{
-                            zoom: 1,
-                        }}
-                    >
-                        <OrbitControls
-                            target={[0, 1.3, 0]}
-                            enableRotate={false}
-                            enablePan={false}
-                            enableZoom={false}
-                        />
-                        <Environment preset="sunset" />
-                        <ambientLight intensity={0.8} color="pink" />
-                        <TalkingAvatar
-                            answer={answer}
-                            isSpeaking={isSpeaking}
-                        />
-                    </Canvas>
-                </div>
-                <div className="input-container">
-                    <div className="input-area">
-                        <button
-                            onClick={handleMicClick}
-                            className={`mic-button ${
-                                isListening ? "listening" : ""
-                            }`}
-                            style={{ color: "#fff" }}
-                        >
-                            {isListening ? <IoMicOff /> : <IoMic />}
-                        </button>
-                        <div>
-                            <input
-                                type="text"
-                                value={questionInput}
-                                onChange={(e) =>
-                                    setQuestionInput(e.target.value)
-                                }
-                                placeholder="Type a message..."
-                                onKeyDown={(e) =>
-                                    e.key === "Enter" && handleSend()
-                                }
-                            />
-                            <button
-                                onClick={handleSend}
-                                className="send-button"
-                            >
-                                <IoSend />
-                            </button>
+                {/* Conversation Toggle Button */}
+                <button
+                    onClick={toggleConversation}
+                    className="toggle-conversation-button"
+                    style={{ position: "absolute", zIndex: 100 }}
+                >
+                    {conversation ? "End Conversation" : "Start Conversation"}
+                </button>
+
+                {conversation && (
+                    <>
+                        <WebcamDemo conversation={conversation} />
+                        <div className="avatar-container">
+                            <Canvas camera={{ position: [-0.04, 2.6, 3.76] }}>
+                                <OrbitControls
+                                    enableRotate={true}
+                                    enablePan={true}
+                                    enableZoom={true}
+                                    target={[-0.17, 4.15, -0.46]}
+                                    // Camera Position: -0.04145867475683593 2.6003529092396627 3.7695279159492094
+                                    // Target Position: -0.17061215335331323 4.157998458801194 -0.46364063383683396
+                                />
+                                <Environment preset="sunset" />
+                                <ambientLight intensity={0.8} color="pink" />
+                                <TalkingAvatar
+                                    answer={answer}
+                                    isSpeaking={isSpeaking}
+                                    scale={[2.5, 2.5, 2.5]}
+                                />
+                            </Canvas>
                         </div>
-                    </div>
-                </div>
+                        <div className="input-container">
+                            <div className="input-area">
+                                <button
+                                    onClick={handleMicClick}
+                                    className={`mic-button ${
+                                        isListening ? "listening" : ""
+                                    }`}
+                                    style={{ color: "#fff" }}
+                                >
+                                    {isListening ? <IoMicOff /> : <IoMic />}
+                                </button>
+                                <div>
+                                    <input
+                                        type="text"
+                                        value={questionInput}
+                                        onChange={(e) =>
+                                            setQuestionInput(e.target.value)
+                                        }
+                                        placeholder="Type a message..."
+                                        onKeyDown={(e) =>
+                                            e.key === "Enter" && handleSend()
+                                        }
+                                    />
+                                    <button
+                                        onClick={handleSend}
+                                        className="send-button"
+                                    >
+                                        <IoSend />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );
