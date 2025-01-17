@@ -10,7 +10,6 @@ const width = 1200;
 const height = 1200;
 
 const WebcamDemo = ({ conversation }) => {
-    const [detectionStartTime, setDetectionStartTime] = useState(null);
     const [snapshot, setSnapshot] = useState(null);
 
     const { webcamRef, boundingBox, isLoading, detected, facesDetected } =
@@ -76,14 +75,14 @@ const WebcamDemo = ({ conversation }) => {
                 sendToGemini(base64Image)
                     .then((responseText) => {
                         console.log("AI Response:", responseText);
-                        fetchSpeech(responseText); 
+                        fetchSpeech(responseText);
                     })
                     .catch((error) => {
                         console.error("Error sending to Gemini API:", error);
                     });
             }
         }
-    }, [detected, conversation, webcamRef]);
+    }, [conversation, webcamRef]);
 
     return (
         <div

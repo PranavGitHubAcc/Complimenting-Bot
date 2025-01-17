@@ -13,6 +13,7 @@ function Chatbot() {
     const [answer, setAnswer] = useState({});
     const [chatQuestion, setChatQuestion] = useState("Enter your question");
     const [isListening, setIsListening] = useState(false);
+    const [audioPlayer, setAudioPlayer] = useState();
     const [isGenerating, setIsGenerating] = useState(false);
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [conversation, setConversation] = useState(false);
@@ -43,32 +44,79 @@ function Chatbot() {
         }
     }, [recognition]);
 
+    // useEffect(() => {
+    //     if (audioPlayer) {
+    //         console.log("Audio player created:", audioPlayer);
+    //         console.log("Duration:", audioPlayer.duration);
+    //         console.log("Ready state:", audioPlayer.readyState);
+
+    //         // Try to play and log result
+    //         const playAudio = async () => {
+    //             try {
+    //                 await audioPlayer.play();
+    //                 console.log("Audio started playing");
+    //             } catch (error) {
+    //                 console.error("Error playing audio:", error);
+    //             }
+    //         };
+
+    //         playAudio();
+
+    //         // Monitor all possible audio events
+    //         const events = [
+    //             "loadstart",
+    //             "durationchange",
+    //             "loadedmetadata",
+    //             "loadeddata",
+    //             "progress",
+    //             "canplay",
+    //             "canplaythrough",
+    //             "play",
+    //             "playing",
+    //             "timeupdate",
+    //             "pause",
+    //             "ended",
+    //             "error",
+    //         ];
+
+    //         events.forEach((event) => {
+    //             audioPlayer.addEventListener(event, () => {
+    //                 console.log(`Audio event: ${event}`, {
+    //                     currentTime: audioPlayer.currentTime,
+    //                     duration: audioPlayer.duration,
+    //                     paused: audioPlayer.paused,
+    //                     ended: audioPlayer.ended,
+    //                     readyState: audioPlayer.readyState,
+    //                 });
+    //             });
+    //         });
+    //     }
+    // }, [audioPlayer]);
+
+    // useEffect(() => {
+    //     if (audioPlayer) {
+    //         audioPlayer.addEventListener("timeupdate", () => {
+    //             console.log(`Audio event: ${event}`, {
+    //                 currentTime: audioPlayer?.currentTime,
+    //             });
+    //         });
+    //     }
+    // }, [audioPlayer]);
+
     const fetchSpeech = (answerText) => {
         const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(
             import.meta.env.VITE_REACT_APP_AZURE_API_KEY,
             import.meta.env.VITE_REACT_APP_AZURE_REGION
         );
 
-        // speechConfig.speechSynthesisVoiceName = "en-IN-AashiNeural"; // Replace with desired voice
-        // speechConfig.speechSynthesisVoiceName = "en-IE-EmilyNeural"; // Replace with desired voice
-        speechConfig.speechSynthesisVoiceName =
-            "en-US-Aria:DragonHDLatestNeural"; // Replace with desired voice
+        // speechConfig.speechSynthesisVoiceName =
+        //     "en-US-Aria:DragonHDLatestNeural";
 
         const audioConfig = SpeechSDK.AudioConfig.fromDefaultSpeakerOutput();
         const synthesizer = new SpeechSDK.SpeechSynthesizer(
             speechConfig,
             audioConfig
         );
-
-        const visemesData = [];
-
-        // Handle viseme events
-        synthesizer.synthesisVisemeReceived = (s, e) => {
-            visemesData.push({
-                visemeId: e.visemeId,
-                audioOffset: e.audioOffset,
-            });
-        };
 
         synthesizer.speakTextAsync(
             answerText,
@@ -77,16 +125,13 @@ function Chatbot() {
                     result.reason ===
                     SpeechSDK.ResultReason.SynthesizingAudioCompleted
                 ) {
-                    console.log("Speech synthesized successfully");
-                    setAnswer((prev) => ({
-                        ...prev,
-                        audioPlayer: new Audio(result.audioData),
-                        visemes: visemesData,
-                    }));
+                    const blob = new Blob([result.audioData], {
+                        type: "audio/wav",
+                    }); // or 'audio/wav' depending on your audio format
+                    const url = URL.createObjectURL(blob);
+                    const audio = new Audio(url);
                     setIsSpeaking(true);
-                    const audioPlayer = new Audio(
-                        URL.createObjectURL(result.audioData)
-                    );
+                    setAudioPlayer(audio);
                     audioPlayer.play();
                     audioPlayer.onended = () => setIsSpeaking(false);
                 } else {
@@ -102,11 +147,25 @@ function Chatbot() {
                 synthesizer.close();
             }
         );
+
+        const visemesData = [];
+
+        synthesizer.visemeReceived = function (s, e) {
+            visemesData.push([e.audioOffset / 10000, e.visemeId]);
+
+            setAnswer((prev) => ({
+                ...prev,
+                visemes: visemesData,
+            }));
+            // console.log(answer);
+        };
+
+        // console.log("answer");
+        // console.log(answer);
     };
 
     const toggleConversation = () => {
         setConversation((prevState) => !prevState);
-        console.log(conversation);
     };
 
     const handleSend = async () => {
@@ -152,7 +211,6 @@ function Chatbot() {
     return (
         <div className="chatbot-container">
             <div className="main-container">
-                {/* Conversation Toggle Button */}
                 <button
                     onClick={toggleConversation}
                     className="toggle-conversation-button"
@@ -167,9 +225,9 @@ function Chatbot() {
                         <div className="avatar-container">
                             <Canvas camera={{ position: [-0.04, 2.6, 3.76] }}>
                                 <OrbitControls
-                                    enableRotate={true}
-                                    enablePan={true}
-                                    enableZoom={true}
+                                    enableRotate={false}
+                                    enablePan={false}
+                                    enableZoom={false}
                                     target={[-0.17, 4.15, -0.46]}
                                     // Camera Position: -0.04145867475683593 2.6003529092396627 3.7695279159492094
                                     // Target Position: -0.17061215335331323 4.157998458801194 -0.46364063383683396
@@ -178,6 +236,7 @@ function Chatbot() {
                                 <ambientLight intensity={0.8} color="pink" />
                                 <TalkingAvatar
                                     answer={answer}
+                                    audioPlayer={audioPlayer}
                                     isSpeaking={isSpeaking}
                                     scale={[2.5, 2.5, 2.5]}
                                 />
