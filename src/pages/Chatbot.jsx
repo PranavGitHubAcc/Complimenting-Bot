@@ -44,73 +44,22 @@ function Chatbot() {
         }
     }, [recognition]);
 
-    // useEffect(() => {
-    //     if (audioPlayer) {
-    //         console.log("Audio player created:", audioPlayer);
-    //         console.log("Duration:", audioPlayer.duration);
-    //         console.log("Ready state:", audioPlayer.readyState);
-
-    //         // Try to play and log result
-    //         const playAudio = async () => {
-    //             try {
-    //                 await audioPlayer.play();
-    //                 console.log("Audio started playing");
-    //             } catch (error) {
-    //                 console.error("Error playing audio:", error);
-    //             }
-    //         };
-
-    //         playAudio();
-
-    //         // Monitor all possible audio events
-    //         const events = [
-    //             "loadstart",
-    //             "durationchange",
-    //             "loadedmetadata",
-    //             "loadeddata",
-    //             "progress",
-    //             "canplay",
-    //             "canplaythrough",
-    //             "play",
-    //             "playing",
-    //             "timeupdate",
-    //             "pause",
-    //             "ended",
-    //             "error",
-    //         ];
-
-    //         events.forEach((event) => {
-    //             audioPlayer.addEventListener(event, () => {
-    //                 console.log(`Audio event: ${event}`, {
-    //                     currentTime: audioPlayer.currentTime,
-    //                     duration: audioPlayer.duration,
-    //                     paused: audioPlayer.paused,
-    //                     ended: audioPlayer.ended,
-    //                     readyState: audioPlayer.readyState,
-    //                 });
-    //             });
-    //         });
-    //     }
-    // }, [audioPlayer]);
-
-    // useEffect(() => {
-    //     if (audioPlayer) {
-    //         audioPlayer.addEventListener("timeupdate", () => {
-    //             console.log(`Audio event: ${event}`, {
-    //                 currentTime: audioPlayer?.currentTime,
-    //             });
-    //         });
-    //     }
-    // }, [audioPlayer]);
+    const stopCurrentAudio = () => {
+        if (audioPlayer) {
+            audioPlayer.pause();
+            audioPlayer.currentTime = 0;
+            setIsSpeaking(false);
+        }
+    };
 
     const fetchSpeech = (answerText) => {
+        // Stop any currently playing audio
+        stopCurrentAudio();
+
         const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(
             import.meta.env.VITE_REACT_APP_AZURE_API_KEY,
             import.meta.env.VITE_REACT_APP_AZURE_REGION
         );
-
-        // speechConfig.speechSynthesisVoiceName =
-        //     "en-US-Aria:DragonHDLatestNeural";
 
         const audioConfig = SpeechSDK.AudioConfig.fromDefaultSpeakerOutput();
         const synthesizer = new SpeechSDK.SpeechSynthesizer(
@@ -127,13 +76,24 @@ function Chatbot() {
                 ) {
                     const blob = new Blob([result.audioData], {
                         type: "audio/wav",
-                    }); // or 'audio/wav' depending on your audio format
+                    });
                     const url = URL.createObjectURL(blob);
                     const audio = new Audio(url);
-                    setIsSpeaking(true);
+
+                    // Set up the new audio player
+                    audio.onended = () => {
+                        setIsSpeaking(false);
+                        URL.revokeObjectURL(url); // Clean up the blob URL
+                    };
+
+                    setAnswer((prev) => ({
+                        ...prev,
+                        visemes: visemesData,
+                    }));
+
                     setAudioPlayer(audio);
-                    audioPlayer.play();
-                    audioPlayer.onended = () => setIsSpeaking(false);
+                    setIsSpeaking(true);
+                    audio.play();
                 } else {
                     console.error(
                         "Speech synthesis failed:",
@@ -151,7 +111,7 @@ function Chatbot() {
         const visemesData = [];
 
         synthesizer.visemeReceived = function (s, e) {
-            visemesData.push([e.audioOffset / 10000, e.visemeId]);
+            visemesData.push([e.audioOffset / 5000, e.visemeId]);
 
             setAnswer((prev) => ({
                 ...prev,
@@ -165,12 +125,16 @@ function Chatbot() {
     };
 
     const toggleConversation = () => {
+        stopCurrentAudio(); // Stop audio when toggling conversation
         setConversation((prevState) => !prevState);
     };
 
     const handleSend = async () => {
         if (!questionInput.trim()) return;
         setIsGenerating(true);
+
+        // Stop any currently playing audio before generating new response
+        stopCurrentAudio();
 
         const model = genAIInstance.getGenerativeModel({
             model: "gemini-1.5-flash",
@@ -188,13 +152,15 @@ function Chatbot() {
                 };
             });
             fetchSpeech(answerData);
-            console.log(answer);
+            setQuestionInput(""); // Clear input after sending
         } catch (err) {
-            console.log(err);
+            console.error(err);
+            setIsGenerating(false);
         }
     };
 
     const handleMicClick = () => {
+        stopCurrentAudio(); // Stop audio when starting new voice input
         setQuestionInput("");
         if (recognition) {
             if (isListening) {
@@ -207,6 +173,13 @@ function Chatbot() {
             alert("Speech recognition is not supported in this browser.");
         }
     };
+
+    // Cleanup effect
+    useEffect(() => {
+        return () => {
+            stopCurrentAudio();
+        };
+    }, []);
 
     return (
         <div className="chatbot-container">
@@ -229,8 +202,6 @@ function Chatbot() {
                                     enablePan={false}
                                     enableZoom={false}
                                     target={[-0.17, 4.15, -0.46]}
-                                    // Camera Position: -0.04145867475683593 2.6003529092396627 3.7695279159492094
-                                    // Target Position: -0.17061215335331323 4.157998458801194 -0.46364063383683396
                                 />
                                 <Environment preset="sunset" />
                                 <ambientLight intensity={0.8} color="pink" />
@@ -268,6 +239,7 @@ function Chatbot() {
                                     <button
                                         onClick={handleSend}
                                         className="send-button"
+                                        disabled={isGenerating}
                                     >
                                         <IoSend />
                                     </button>
