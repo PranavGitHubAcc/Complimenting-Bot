@@ -52,7 +52,7 @@ function Chatbot() {
         }
     };
 
-    const fetchSpeech = (answerText) => {
+    const fetchSpeech = async (answerText) => {
         // Stop any currently playing audio
         stopCurrentAudio();
 
@@ -60,8 +60,10 @@ function Chatbot() {
             import.meta.env.VITE_REACT_APP_AZURE_API_KEY,
             import.meta.env.VITE_REACT_APP_AZURE_REGION
         );
+        // const audioConfig = SpeechSDK.AudioConfig.fromDefaultSpeakerOutput();
+        const audioConfig = null;
+        console.log(audioConfig);
 
-        const audioConfig = SpeechSDK.AudioConfig.fromDefaultSpeakerOutput();
         const synthesizer = new SpeechSDK.SpeechSynthesizer(
             speechConfig,
             audioConfig
