@@ -4,6 +4,7 @@
     background-position: bottom;
     background-repeat: no-repeat;
     background-size: cover;
+    background-color: #121212; /* Dark background for MUI-like theme */
 }
 
 .avatar-container {
@@ -59,11 +60,10 @@
     position: absolute;
     top: -60px;
     background: none;
-    background-color: #357df1;
-    border: 2px solid #fff;
-    color: #fff;
+    background-color: #512da8;
+    border: 2px solid white;
+    color: white;
     border-radius: 50%;
-    color: #222233;
     font-size: 1.5rem;
     cursor: pointer;
     padding: 13px 16px;
@@ -72,7 +72,7 @@
 }
 
 .mic-button:hover {
-    background-color: #2d5ec8;
+    background-color: #4527a0;
 }
 
 @keyframes pulse {
@@ -95,12 +95,16 @@
     padding: 8px 20px;
     border: none;
     border-radius: 0 12px 12px 0;
-    background-color: #70a1f0;
-    color: #181e54;
+    background-color: #512da8;
+    color: white;
     font-weight: 600;
     font-size: 1rem;
     cursor: pointer;
     transition: background-color 0.3s;
+}
+
+.send-button:hover {
+    background-color: #4527a0;
 }
 
 .toggle-conversation-button {
@@ -109,7 +113,7 @@
     top: 20px;
     right: 20px;
     padding: 10px 20px;
-    background-color: #007bff; /* Primary blue color */
+    background-color: #512da8; /* Primary blue color */
     color: #fff; /* White text */
     border: none; /* Remove border */
     border-radius: 8px; /* Rounded corners */
@@ -120,11 +124,58 @@
 }
 
 .toggle-conversation-button:hover {
-    background-color: #0056b3; /* Darker blue on hover */
+    background-color: #4527a0; /* Darker blue on hover */
     transform: scale(1.05); /* Slightly increase size */
 }
 
 .toggle-conversation-button:active {
     background-color: #003d80; /* Even darker blue on click */
     transform: scale(1); /* Return to original size */
+}
+
+.sidebar {
+    width: 300px;
+    background: linear-gradient(145deg, #1c1c1e, #2c2c34);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 20px;
+    box-shadow: -4px 0 10px rgba(0, 0, 0, 0.3);
+    overflow-y: auto;
+}
+
+.sidebar h2 {
+    color: #c1c1ff;
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+    width: 100%;
+}
+
+.sidebar li {
+    padding: 10px 15px;
+    margin: 10px 0;
+    background: #292b2f;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #d1d1ff;
+    font-size: 1rem;
+    transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.sidebar li:hover {
+    background: #3e4052;
+    transform: scale(1.05);
+}
+
+.sidebar li:active {
+    background: #5a5d71;
+    transform: scale(1);
 }
