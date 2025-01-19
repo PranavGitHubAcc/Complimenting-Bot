@@ -1,3 +1,4 @@
+import { avatars, useTalkingAvatar } from "@/hooks/useTalkingAvatar";
 import { Html, useAnimations, useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef, useState } from "react";
@@ -6,9 +7,9 @@ import { randInt } from "three/src/math/MathUtils";
 
 const ANIMATION_FADE_TIME = 0.5;
 
-export function TalkingAvatar({ answer, audioPlayer, isSpeaking, ...props }) {
+export function TalkingAvatar({ avatar, visemes, videoRef, ...props }) {
     const group = useRef();
-    const { scene } = useGLTF(`/models/Teacher_Ananya.glb`);
+    const { scene } = useGLTF(`/models/Teacher_${avatar}.glb`);
     useEffect(() => {
         scene.traverse((child) => {
             if (child.material) {
@@ -19,12 +20,15 @@ export function TalkingAvatar({ answer, audioPlayer, isSpeaking, ...props }) {
         });
     }, [scene]);
 
-    const { animations } = useGLTF(`/models/animations_Ananya.glb`);
+    const isVideoPlaying = useTalkingAvatar((state) => state.isVideoPlaying);
+    const { animations } = useGLTF(`/models/animations_${avatar}.glb`);
     const { actions, mixer } = useAnimations(animations, group);
     const [animation, setAnimation] = useState("Idle");
     const [blink, setBlink] = useState(false);
-    const [localTime, setLocalTime] = useState(0);
-    const [audioStartTime, setAudioStartTime] = useState(null);
+
+    useEffect(() => {
+        console.log(isVideoPlaying);
+    }, [isVideoPlaying]);
 
     useEffect(() => {
         let blinkTimeout;
@@ -42,46 +46,50 @@ export function TalkingAvatar({ answer, audioPlayer, isSpeaking, ...props }) {
     }, []);
 
     useEffect(() => {
-        if (isSpeaking) {
+        let interval;
+
+        // Function to select a random animation
+        const getRandomAnimation = () => {
+            const animations = ["Talking", "Talking2"];
+            return animations[Math.floor(Math.random() * animations.length)];
+        };
+
+        if (isVideoPlaying) {
             setAnimation("Talking");
+            // Start interval to change animation
+            interval = setInterval(() => {
+                setAnimation(getRandomAnimation());
+            }, 3000);
         } else {
             setAnimation("Idle");
         }
-    }, [isSpeaking]);
-
-    var visemeId;
-
-    useEffect(() => {
-        if (audioPlayer) {
-            audioPlayer.addEventListener("timeupdate", () => {
-                console.log(`Audio event: ${event}`, {
-                    currentTime: audioPlayer?.currentTime,
-                });
-                setLocalTime(audioPlayer.currentTime);
-            });
-        }
-    }, [audioPlayer]);
+        return () => clearInterval(interval);
+    }, [isVideoPlaying]);
 
     useFrame(() => {
-        lerpMorphTarget("mouthSmile", 0.2, 0.5);
-        lerpMorphTarget("eye_close", blink ? 1 : 0, 0.5);
+        const { isVideoPlaying } = useTalkingAvatar.getState();
 
-        // Talking
-        for (let i = 0; i <= 21; i++) {
-            lerpMorphTarget(i, 0, 0.1); // reset morph targets
-        }
+        // console.log(isVideoPlaying);
 
-        if (isSpeaking && answer && answer.visemes && audioPlayer) {
-            for (let i = answer.visemes.length - 1; i >= 0; i--) {
-                const viseme = answer.visemes[i];
-                // console.log(localTime);
+        if (isVideoPlaying && visemes) {
+            // Reset morph targets
+            for (let i = 0; i <= 21; i++) {
+                lerpMorphTarget(i, 0, 0.1);
+            }
 
-                if (localTime * 1000 >= viseme[0]) {
-                    console.log("viseme" + viseme);
-                    visemeId = viseme[1];
-                    lerpMorphTarget(visemeId, 1, 0.2);
+            // Map visemes to current video time
+            const currentTime = videoRef.current?.currentTime * 1000; // Convert to milliseconds
+            for (let i = visemes.length - 1; i >= 0; i--) {
+                const viseme = visemes[i];
+                if (currentTime >= viseme[0]) {
+                    lerpMorphTarget(viseme[1], 1, 0.2); // Adjust the target based on the viseme data
                     break;
                 }
+            }
+        } else {
+            // Idle state: Reset morph targets
+            for (let i = 0; i <= 21; i++) {
+                lerpMorphTarget(i, 0, 0.1);
             }
         }
     });
@@ -122,5 +130,7 @@ export function TalkingAvatar({ answer, audioPlayer, isSpeaking, ...props }) {
     );
 }
 
-useGLTF.preload(`/models/Teacher_Ananya.glb`);
-useGLTF.preload(`/models/animations_Ananya.glb`);
+avatars.forEach((avatar) => {
+    useGLTF.preload(`/models/Teacher_${avatar}.glb`);
+    useGLTF.preload(`/models/animations_${avatar}.glb`);
+});

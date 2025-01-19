@@ -4,12 +4,12 @@ import useFaceDetection from "../hooks/useFaceDetection";
 import FaceDetection from "@mediapipe/face_detection";
 import { Camera } from "@mediapipe/camera_utils";
 import sendToGemini from "../utils/sendToGemini";
+import * as SpeechSDK from "microsoft-cognitiveservices-speech-sdk";
 
 const width = 1200;
 const height = 1200;
 
-const WebcamDemo = () => {
-    const [detectionStartTime, setDetectionStartTime] = useState(null);
+const WebcamDemo = ({ conversation }) => {
     const [snapshot, setSnapshot] = useState(null);
 
     const { webcamRef, boundingBox, isLoading, detected, facesDetected } =
@@ -29,40 +29,60 @@ const WebcamDemo = () => {
                 }),
         });
 
-    useEffect(() => {
-        const interval = setInterval(() => {
-            if (detected) {
-                // Face is detected
-                if (!detectionStartTime) {
-                    setDetectionStartTime(Date.now());
-                } else if (Date.now() - detectionStartTime >= 10000) {
-                    if (webcamRef?.current) {
-                        const screenshot = webcamRef.current.getScreenshot();
-                        if (screenshot) {
-                            setSnapshot(screenshot); // Save the screenshot
-                            const base64Image = snapshot?.split(",")[1];
-                            sendToGemini(base64Image)
-                                .then((responseText) => {
-                                    console.log("AI Response:", responseText);
-                                })
-                                .catch((error) => {
-                                    console.error(
-                                        "Error sending to Gemini API:",
-                                        error
-                                    );
-                                });
-                        }
-                    }
-                    setDetectionStartTime(null); // Reset timer
-                }
-            } else {
-                // No face detected, reset timer
-                setDetectionStartTime(null);
-            }
-        }, 100); // Check every 100ms
+    const fetchSpeech = (textToSpeak) => {
+        const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(
+            import.meta.env.VITE_REACT_APP_AZURE_API_KEY,
+            import.meta.env.VITE_REACT_APP_AZURE_REGION
+        );
 
-        return () => clearInterval(interval);
-    }, [detected, detectionStartTime, webcamRef]);
+        speechConfig.speechSynthesisVoiceName =
+            "en-US-Aria:DragonHDLatestNeural";
+        const audioConfig = SpeechSDK.AudioConfig.fromDefaultSpeakerOutput();
+        const synthesizer = new SpeechSDK.SpeechSynthesizer(
+            speechConfig,
+            audioConfig
+        );
+
+        synthesizer.speakTextAsync(
+            textToSpeak,
+            (result) => {
+                if (
+                    result.reason ===
+                    SpeechSDK.ResultReason.SynthesizingAudioCompleted
+                ) {
+                    console.log("Speech synthesized successfully.");
+                } else {
+                    console.error(
+                        "Speech synthesis failed:",
+                        result.errorDetails
+                    );
+                }
+                synthesizer.close();
+            },
+            (err) => {
+                console.error("Error synthesizing speech:", err);
+                synthesizer.close();
+            }
+        );
+    };
+
+    useEffect(() => {
+        if (detected && webcamRef?.current && conversation) {
+            const screenshot = webcamRef.current.getScreenshot();
+            if (screenshot) {
+                setSnapshot(screenshot);
+                const base64Image = snapshot?.split(",")[1];
+                sendToGemini(base64Image)
+                    .then((responseText) => {
+                        console.log("AI Response:", responseText);
+                        fetchSpeech(responseText);
+                    })
+                    .catch((error) => {
+                        console.error("Error sending to Gemini API:", error);
+                    });
+            }
+        }
+    }, [conversation, webcamRef]);
 
     return (
         <div
