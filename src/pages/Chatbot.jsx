@@ -7,6 +7,7 @@ import { IoSend, IoMic, IoMicOff } from "react-icons/io5";
 import "./Chatbot.css";
 import * as SpeechSDK from "microsoft-cognitiveservices-speech-sdk";
 import genAIInstance from "../utils/geminiInstance";
+import { generateChatResponse } from "../utils/chatUtil";
 
 function Chatbot() {
     const [questionInput, setQuestionInput] = useState("");
@@ -119,50 +120,61 @@ function Chatbot() {
                 ...prev,
                 visemes: visemesData,
             }));
-            // console.log(answer);
         };
-
-        // console.log("answer");
-        // console.log(answer);
     };
 
     const toggleConversation = () => {
-        stopCurrentAudio(); // Stop audio when toggling conversation
+        stopCurrentAudio();
         setConversation((prevState) => !prevState);
     };
 
+    // const handleSend = async () => {
+    //     if (!questionInput.trim()) return;
+    //     setIsGenerating(true);
+    //     stopCurrentAudio();
+
+    //     const model = genAIInstance.getGenerativeModel({
+    //         model: "gemini-1.5-flash",
+    //     });
+    //     setChatQuestion(questionInput);
+
+    //     try {
+    //         const answerResponse = await model.generateContent(questionInput);
+    //         const answerData = answerResponse.response.text();
+    //         setIsGenerating(false);
+    //         setAnswer((prev) => {
+    //             return {
+    //                 ...prev,
+    //                 text: answerData,
+    //             };
+    //         });
+    //         fetchSpeech(answerData);
+    //         setQuestionInput("");
+    //     } catch (err) {
+    //         console.error(err);
+    //         setIsGenerating(false);
+    //     }
+    // };
+
     const handleSend = async () => {
-        if (!questionInput.trim()) return;
-        setIsGenerating(true);
-
-        // Stop any currently playing audio before generating new response
-        stopCurrentAudio();
-
-        const model = genAIInstance.getGenerativeModel({
-            model: "gemini-1.5-flash",
-        });
-        setChatQuestion(questionInput);
-
         try {
-            const answerResponse = await model.generateContent(questionInput);
-            const answerData = answerResponse.response.text();
-            setIsGenerating(false);
-            setAnswer((prev) => {
-                return {
-                    ...prev,
-                    text: answerData,
-                };
+            await generateChatResponse({
+                questionInput,
+                genAIInstance,
+                setIsGenerating,
+                setChatQuestion,
+                stopCurrentAudio,
+                setAnswer,
+                fetchSpeech,
             });
-            fetchSpeech(answerData);
-            setQuestionInput(""); // Clear input after sending
+            setQuestionInput("");
         } catch (err) {
-            console.error(err);
-            setIsGenerating(false);
+            console.error("Error sending message:", err);
         }
     };
 
     const handleMicClick = () => {
-        stopCurrentAudio(); // Stop audio when starting new voice input
+        stopCurrentAudio();
         setQuestionInput("");
         if (recognition) {
             if (isListening) {
@@ -176,7 +188,6 @@ function Chatbot() {
         }
     };
 
-    // Cleanup effect
     useEffect(() => {
         return () => {
             stopCurrentAudio();
@@ -184,7 +195,15 @@ function Chatbot() {
     }, []);
 
     return (
-        <div style={{ display: "flex", height: "100vh", overflow: "hidden", backgroundColor: "#121212", zIndex: 1 }}>
+        <div
+            style={{
+                display: "flex",
+                height: "100vh",
+                overflow: "hidden",
+                backgroundColor: "#121212",
+                zIndex: 1,
+            }}
+        >
             <button
                 onClick={toggleConversation}
                 className="toggle-conversation-button"
@@ -217,6 +236,7 @@ function Chatbot() {
                                         audioPlayer={audioPlayer}
                                         isSpeaking={isSpeaking}
                                         scale={[2.5, 2.5, 2.5]}
+                                        isGenerating={isGenerating}
                                     />
                                 </Canvas>
                             </div>
@@ -263,11 +283,11 @@ function Chatbot() {
                     <h2>Suggested Questions</h2>
                     <ul>
                         {[
-                            "What is the weather today?",
-                            "Tell me about the latest news.",
-                            "How can I improve my health?",
-                            "What are some good recipes?",
-                            "Recommend a book to read.",
+                            "Tell me about the Tech fest?",
+                            "What all events are happening today?",
+                            "Tell me about Techeshi's Castle event.",
+                            "Who is sponsoring the event?",
+                            "Tell me the tech fest timing.",
                         ].map((question, index) => (
                             <li
                                 key={index}
@@ -285,4 +305,3 @@ function Chatbot() {
 }
 
 export default Chatbot;
-    

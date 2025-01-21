@@ -82,7 +82,7 @@ const WebcamDemo = ({ conversation }) => {
                     });
             }
         }
-    }, [conversation, webcamRef]);
+    }, [detected, conversation, webcamRef]);
 
     return (
         <div
