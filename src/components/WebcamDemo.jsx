@@ -9,8 +9,10 @@ import * as SpeechSDK from "microsoft-cognitiveservices-speech-sdk";
 const width = 1200;
 const height = 1200;
 
-const WebcamDemo = ({ conversation }) => {
+const WebcamDemo = ({ conversation, setAnswer, fetchSpeech }) => {
     const [snapshot, setSnapshot] = useState(null);
+    const [hasProcessedImage, setHasProcessedImage] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
 
     const { webcamRef, boundingBox, isLoading, detected, facesDetected } =
         useFaceDetection({
@@ -29,60 +31,104 @@ const WebcamDemo = ({ conversation }) => {
                 }),
         });
 
-    const fetchSpeech = (textToSpeak) => {
-        const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(
-            import.meta.env.VITE_REACT_APP_AZURE_API_KEY,
-            import.meta.env.VITE_REACT_APP_AZURE_REGION
-        );
+    // const fetchSpeech = (textToSpeak) => {
+    //     const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(
+    //         import.meta.env.VITE_REACT_APP_AZURE_API_KEY,
+    //         import.meta.env.VITE_REACT_APP_AZURE_REGION
+    //     );
 
-        speechConfig.speechSynthesisVoiceName =
-            "en-US-Aria:DragonHDLatestNeural";
-        const audioConfig = SpeechSDK.AudioConfig.fromDefaultSpeakerOutput();
-        const synthesizer = new SpeechSDK.SpeechSynthesizer(
-            speechConfig,
-            audioConfig
-        );
+    //     speechConfig.speechSynthesisVoiceName =
+    //         "en-US-Aria:DragonHDLatestNeural";
+    //     const audioConfig = SpeechSDK.AudioConfig.fromDefaultSpeakerOutput();
+    //     const synthesizer = new SpeechSDK.SpeechSynthesizer(
+    //         speechConfig,
+    //         audioConfig
+    //     );
 
-        synthesizer.speakTextAsync(
-            textToSpeak,
-            (result) => {
-                if (
-                    result.reason ===
-                    SpeechSDK.ResultReason.SynthesizingAudioCompleted
-                ) {
-                    console.log("Speech synthesized successfully.");
-                } else {
-                    console.error(
-                        "Speech synthesis failed:",
-                        result.errorDetails
-                    );
-                }
-                synthesizer.close();
-            },
-            (err) => {
-                console.error("Error synthesizing speech:", err);
-                synthesizer.close();
-            }
-        );
-    };
+    //     synthesizer.speakTextAsync(
+    //         textToSpeak,
+    //         (result) => {
+    //             if (
+    //                 result.reason ===
+    //                 SpeechSDK.ResultReason.SynthesizingAudioCompleted
+    //             ) {
+    //                 console.log("Speech synthesized successfully.");
+    //             } else {
+    //                 console.error(
+    //                     "Speech synthesis failed:",
+    //                     result.errorDetails
+    //                 );
+    //             }
+    //             synthesizer.close();
+    //         },
+    //         (err) => {
+    //             console.error("Error synthesizing speech:", err);
+    //             synthesizer.close();
+    //         }
+    //     );
+    // };
 
+    // useEffect(() => {
+    //     if (detected && webcamRef?.current && conversation) {
+    //         const screenshot = webcamRef.current.getScreenshot();
+    //         if (screenshot) {
+    //             setSnapshot(screenshot);
+    //             const base64Image = snapshot?.split(",")[1];
+    //             sendToGemini(base64Image)
+    //                 .then((responseText) => {
+    //                     console.log("AI Response:", responseText);
+    //                     fetchSpeech(responseText);
+    //                 })
+    //                 .catch((error) => {
+    //                     console.error("Error sending to Gemini API:", error);
+    //                 });
+    //         }
+    //     }
+    // }, [detected, conversation, webcamRef]);
     useEffect(() => {
-        if (detected && webcamRef?.current && conversation) {
+        // Only process once when conversation starts and face is detected
+        if (
+            conversation &&
+            detected &&
+            !hasProcessedImage &&
+            !isProcessing &&
+            webcamRef?.current
+        ) {
+            setIsProcessing(true);
+
             const screenshot = webcamRef.current.getScreenshot();
             if (screenshot) {
-                setSnapshot(screenshot);
-                const base64Image = snapshot?.split(",")[1];
+                const base64Image = screenshot.split(",")[1];
+
+                // Send to Gemini with a welcoming prompt
                 sendToGemini(base64Image)
                     .then((responseText) => {
-                        console.log("AI Response:", responseText);
+                        console.log("Initial AI Response:", responseText);
+                        // Update the answer state
+                        setAnswer((prev) => ({
+                            ...prev,
+                            text: responseText,
+                        }));
+                        // Generate speech for the welcome message
                         fetchSpeech(responseText);
+                        setHasProcessedImage(true);
                     })
                     .catch((error) => {
                         console.error("Error sending to Gemini API:", error);
+                    })
+                    .finally(() => {
+                        setIsProcessing(false);
                     });
             }
         }
-    }, [detected, conversation, webcamRef]);
+    }, [conversation, detected, hasProcessedImage, webcamRef]);
+
+    // Reset the processed state when conversation ends
+    useEffect(() => {
+        if (!conversation) {
+            setHasProcessedImage(false);
+        }
+    }, [conversation]);
 
     return (
         <div

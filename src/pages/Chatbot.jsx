@@ -215,7 +215,11 @@ function Chatbot() {
                 {conversation && (
                     <div className="page-container">
                         <div className="chatbot-container">
-                            <WebcamDemo conversation={conversation} />
+                            <WebcamDemo
+                                conversation={conversation}
+                                setAnswer={setAnswer}
+                                fetchSpeech={fetchSpeech}
+                            />
                             <div className="avatar-container">
                                 <Canvas
                                     camera={{ position: [-0.04, 2.6, 3.76] }}
