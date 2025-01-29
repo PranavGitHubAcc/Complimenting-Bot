@@ -19,7 +19,7 @@ const sendToGemini = async (base64Image: string | undefined) => {
     };
 
     const prompt =
-        "Greet and give one compliment according to what you see in the image.";
+        "Greet and give one compliment according to what you see in the image. Say something about the clothes that they are wearing.";
 
     try {
         const apiResult = await model.generateContent([prompt, image]);

@@ -8,6 +8,7 @@ import "./Chatbot.css";
 import * as SpeechSDK from "microsoft-cognitiveservices-speech-sdk";
 import genAIInstance from "../utils/geminiInstance";
 import { generateChatResponse } from "../utils/chatUtil";
+import ContributorCard from "../components/ContributorCard/ContributorCard";
 
 function Chatbot() {
     const [questionInput, setQuestionInput] = useState("");
@@ -206,8 +207,9 @@ function Chatbot() {
         >
             <button
                 onClick={toggleConversation}
-                className="toggle-conversation-button"
-                style={{ position: "absolute", zIndex: 100 }}
+                className={`toggle-conversation-button ${
+                    !conversation ? "center" : ""
+                }`}
             >
                 {conversation ? "End Conversation" : "Start Conversation"}
             </button>
@@ -284,24 +286,39 @@ function Chatbot() {
             </div>
             {conversation && (
                 <div className="sidebar">
-                    <h2>Suggested Questions</h2>
-                    <ul>
-                        {[
-                            "Tell me about the Tech fest?",
-                            "What all events are happening today?",
-                            "Tell me about Techeshi's Castle event.",
-                            "Who is sponsoring the event?",
-                            "Tell me the tech fest timing.",
-                        ].map((question, index) => (
-                            <li
-                                key={index}
-                                onClick={() => setQuestionInput(question)}
-                                className="sidebar-question"
-                            >
-                                {question}
-                            </li>
-                        ))}
-                    </ul>
+                    <div className="sidebar-element">
+                        <h2>Suggested Questions</h2>
+                        <ul>
+                            {[
+                                "Tell me about the Tech fest?",
+                                "What all events are happening on 24th?",
+                                "Tell me about Techeshi's Castle event.",
+                                "Who is sponsoring the event?",
+                                "Tell me the tech fest timing.",
+                            ].map((question, index) => (
+                                <li
+                                    key={index}
+                                    onClick={() => setQuestionInput(question)}
+                                    className="sidebar-question"
+                                >
+                                    {question}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                    <div className="sidebar-element">
+                        <h2>Made by</h2>
+                        <ContributorCard
+                            github="https://github.com/PranavGitHubAcc"
+                            name="Pranav Mahajan"
+                            at="PranavGitHubAcc"
+                        />
+                        <ContributorCard
+                            github="https://github.com/Miran-Firdausi"
+                            name="Miran Firdausi"
+                            at="Miran-Firdausi"
+                        />
+                    </div>
                 </div>
             )}
         </div>

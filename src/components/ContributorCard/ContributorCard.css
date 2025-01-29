@@ -1,0 +1,72 @@
+.contributor-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background-color: rgba(31, 41, 55, 0.8);
+  border: 1px solid #374151;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.contributor-card:hover {
+  background-color: rgba(55, 65, 81, 0.8);
+  transform: translateY(-4px);
+  box-shadow: 0px 4px 15px rgba(59, 130, 246, 0.2);
+}
+
+.avatar-wrapper {
+  position: relative;
+}
+
+.avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid rgba(59, 130, 246, 0.5);
+  transition: all 0.3s ease;
+}
+
+.contributor-card:hover .avatar {
+  border-color: rgba(59, 130, 246, 1);
+}
+
+.avatar-hover-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(59, 130, 246, 0.2);
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.contributor-card:hover .avatar-hover-overlay {
+  opacity: 1;
+}
+
+.contributor-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.contributor-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: white;
+  transition: color 0.3s ease;
+}
+
+.contributor-card:hover .contributor-name {
+  color: rgba(59, 130, 246, 1);
+}
+
+.contributor-id {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  transition: color 0.3s ease;
+}
+
+.contributor-card:hover .contributor-id {
+  color: #d1d5db;
+}
