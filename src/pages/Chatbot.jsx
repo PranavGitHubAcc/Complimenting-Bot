@@ -7,6 +7,8 @@ import { IoSend, IoMic, IoMicOff } from "react-icons/io5";
 import "./Chatbot.css";
 import * as SpeechSDK from "microsoft-cognitiveservices-speech-sdk";
 import genAIInstance from "../utils/geminiInstance";
+import { generateChatResponse } from "../utils/chatUtil";
+import ContributorCard from "../components/ContributorCard/ContributorCard";
 
 function Chatbot() {
     const [questionInput, setQuestionInput] = useState("");
@@ -119,50 +121,61 @@ function Chatbot() {
                 ...prev,
                 visemes: visemesData,
             }));
-            // console.log(answer);
         };
-
-        // console.log("answer");
-        // console.log(answer);
     };
 
     const toggleConversation = () => {
-        stopCurrentAudio(); // Stop audio when toggling conversation
+        stopCurrentAudio();
         setConversation((prevState) => !prevState);
     };
 
+    // const handleSend = async () => {
+    //     if (!questionInput.trim()) return;
+    //     setIsGenerating(true);
+    //     stopCurrentAudio();
+
+    //     const model = genAIInstance.getGenerativeModel({
+    //         model: "gemini-1.5-flash",
+    //     });
+    //     setChatQuestion(questionInput);
+
+    //     try {
+    //         const answerResponse = await model.generateContent(questionInput);
+    //         const answerData = answerResponse.response.text();
+    //         setIsGenerating(false);
+    //         setAnswer((prev) => {
+    //             return {
+    //                 ...prev,
+    //                 text: answerData,
+    //             };
+    //         });
+    //         fetchSpeech(answerData);
+    //         setQuestionInput("");
+    //     } catch (err) {
+    //         console.error(err);
+    //         setIsGenerating(false);
+    //     }
+    // };
+
     const handleSend = async () => {
-        if (!questionInput.trim()) return;
-        setIsGenerating(true);
-
-        // Stop any currently playing audio before generating new response
-        stopCurrentAudio();
-
-        const model = genAIInstance.getGenerativeModel({
-            model: "gemini-1.5-flash",
-        });
-        setChatQuestion(questionInput);
-
         try {
-            const answerResponse = await model.generateContent(questionInput);
-            const answerData = answerResponse.response.text();
-            setIsGenerating(false);
-            setAnswer((prev) => {
-                return {
-                    ...prev,
-                    text: answerData,
-                };
+            await generateChatResponse({
+                questionInput,
+                genAIInstance,
+                setIsGenerating,
+                setChatQuestion,
+                stopCurrentAudio,
+                setAnswer,
+                fetchSpeech,
             });
-            fetchSpeech(answerData);
-            setQuestionInput(""); // Clear input after sending
+            setQuestionInput("");
         } catch (err) {
-            console.error(err);
-            setIsGenerating(false);
+            console.error("Error sending message:", err);
         }
     };
 
     const handleMicClick = () => {
-        stopCurrentAudio(); // Stop audio when starting new voice input
+        stopCurrentAudio();
         setQuestionInput("");
         if (recognition) {
             if (isListening) {
@@ -176,7 +189,6 @@ function Chatbot() {
         }
     };
 
-    // Cleanup effect
     useEffect(() => {
         return () => {
             stopCurrentAudio();
@@ -184,11 +196,20 @@ function Chatbot() {
     }, []);
 
     return (
-        <div style={{ display: "flex", height: "100vh", overflow: "hidden", backgroundColor: "#121212", zIndex: 1 }}>
+        <div
+            style={{
+                display: "flex",
+                height: "100vh",
+                overflow: "hidden",
+                backgroundColor: "#121212",
+                zIndex: 1,
+            }}
+        >
             <button
                 onClick={toggleConversation}
-                className="toggle-conversation-button"
-                style={{ position: "absolute", zIndex: 100 }}
+                className={`toggle-conversation-button ${
+                    !conversation ? "center" : ""
+                }`}
             >
                 {conversation ? "End Conversation" : "Start Conversation"}
             </button>
@@ -196,7 +217,11 @@ function Chatbot() {
                 {conversation && (
                     <div className="page-container">
                         <div className="chatbot-container">
-                            <WebcamDemo conversation={conversation} />
+                            <WebcamDemo
+                                conversation={conversation}
+                                setAnswer={setAnswer}
+                                fetchSpeech={fetchSpeech}
+                            />
                             <div className="avatar-container">
                                 <Canvas
                                     camera={{ position: [-0.04, 2.6, 3.76] }}
@@ -217,6 +242,7 @@ function Chatbot() {
                                         audioPlayer={audioPlayer}
                                         isSpeaking={isSpeaking}
                                         scale={[2.5, 2.5, 2.5]}
+                                        isGenerating={isGenerating}
                                     />
                                 </Canvas>
                             </div>
@@ -260,24 +286,39 @@ function Chatbot() {
             </div>
             {conversation && (
                 <div className="sidebar">
-                    <h2>Suggested Questions</h2>
-                    <ul>
-                        {[
-                            "What is the weather today?",
-                            "Tell me about the latest news.",
-                            "How can I improve my health?",
-                            "What are some good recipes?",
-                            "Recommend a book to read.",
-                        ].map((question, index) => (
-                            <li
-                                key={index}
-                                onClick={() => setQuestionInput(question)}
-                                className="sidebar-question"
-                            >
-                                {question}
-                            </li>
-                        ))}
-                    </ul>
+                    <div className="sidebar-element">
+                        <h2>Suggested Questions</h2>
+                        <ul>
+                            {[
+                                "Tell me about the Tech fest?",
+                                "What all events are happening on 24th?",
+                                "Tell me about Techeshi's Castle event.",
+                                "Who is sponsoring the event?",
+                                "Tell me the tech fest timing.",
+                            ].map((question, index) => (
+                                <li
+                                    key={index}
+                                    onClick={() => setQuestionInput(question)}
+                                    className="sidebar-question"
+                                >
+                                    {question}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                    <div className="sidebar-element">
+                        <h2>Made by</h2>
+                        <ContributorCard
+                            github="https://github.com/PranavGitHubAcc"
+                            name="Pranav Mahajan"
+                            at="PranavGitHubAcc"
+                        />
+                        <ContributorCard
+                            github="https://github.com/Miran-Firdausi"
+                            name="Miran Firdausi"
+                            at="Miran-Firdausi"
+                        />
+                    </div>
                 </div>
             )}
         </div>
@@ -285,4 +326,3 @@ function Chatbot() {
 }
 
 export default Chatbot;
-    

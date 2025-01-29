@@ -6,7 +6,13 @@ import { randInt } from "three/src/math/MathUtils";
 
 const ANIMATION_FADE_TIME = 0.5;
 
-export function TalkingAvatar({ answer, audioPlayer, isSpeaking, ...props }) {
+export function TalkingAvatar({
+    answer,
+    audioPlayer,
+    isSpeaking,
+    isGenerating,
+    ...props
+}) {
     const group = useRef();
     const { scene } = useGLTF(`/models/Teacher_Ananya.glb`);
     useEffect(() => {
@@ -44,10 +50,12 @@ export function TalkingAvatar({ answer, audioPlayer, isSpeaking, ...props }) {
     useEffect(() => {
         if (isSpeaking) {
             setAnimation("Talking");
+        } else if (isGenerating) {
+            setAnimation("Thinking");
         } else {
             setAnimation("Idle");
         }
-    }, [isSpeaking]);
+    }, [isGenerating, isSpeaking]);
 
     var visemeId;
 
